@@ -31,5 +31,8 @@
   "devDependencies": {
     "nodemon": "^3.0.2",
     "prisma": "^5.7.0"
+  },
+  "prisma": {
+    "schema": "../prisma/schema.prisma"
   }
 }
