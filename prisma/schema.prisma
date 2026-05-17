@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  DIRECTEUR
+  PROFESSEUR
+  SECRETAIRE
+}
+
+enum Statut {
+  ACTIF
+  INACTIF
+  SUSPENDU
+}
+
+enum StatutPaiement {
+  PAYE
+  PARTIEL
+  IMPAYE
+}
+
+enum TypeAbsence {
+  ABSENCE
+  RETARD
+  PRESENCE
+}
+
+enum Sexe {
+  M
+  F
+}
+
+model Etablissement {
+  id          String    @id @default(uuid())
+  nom         String
+  adresse     String?
+  telephone   String?
+  email       String?
+  logo        String?
+  statut      Statut    @default(ACTIF)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]
+  filieres    Filiere[]
+  etudiants   Etudiant[]
+  paiements   Paiement[]
+
+  @@map("etablissements")
+}
+
+model User {
+  id              String        @id @default(uuid())
+  nom             String
+  prenom          String?
+  email           String        @unique
+  telephone       String?
+  password        String
+  role            Role
+  actif           Boolean       @default(true)
+  photo           String?
+  resetToken      String?
+  resetExpires    DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  etablissementId String?
+  etablissement   Etablissement? @relation(fields: [etablissementId], references: [id], onDelete: Cascade)
+
+  professeur      Professeur?
+  absencesSaisies Absence[]
+
+  @@map("users")
+}
+
+model Filiere {
+  id              String        @id @default(uuid())
+  nom             String
+  description     String?
+  duree           Int?
+  actif           Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  etablissementId String
+  etablissement   Etablissement @relation(fields: [etablissementId], references: [id], onDelete: Cascade)
+
+  matieres        Matiere[]
+  etudiants       Etudiant[]
+  niveaux         Niveau[]
+
+  @@map("filieres")
+}
+
+model Niveau {
+  id          String    @id @default(uuid())
+  nom         String
+  ordre       Int       @default(1)
+  createdAt   DateTime  @default(now())
+
+  filiereId   String
+  filiere     Filiere   @relation(fields: [filiereId], references: [id], onDelete: Cascade)
+
+  etudiants   Etudiant[]
+  notes       Note[]
+  absences    Absence[]
+
+  @@map("niveaux")
+}
+
+model Matiere {
+  id              String        @id @default(uuid())
+  nom             String
+  coefficient     Float         @default(1)
+  heuresTotal     Int?
+  actif           Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  filiereId       String
+  filiere         Filiere       @relation(fields: [filiereId], references: [id], onDelete: Cascade)
+
+  professeurs     ProfesseurMatiere[]
+  notes           Note[]
+  absences        Absence[]
+
+  @@map("matieres")
+}
+
+model Professeur {
+  id          String    @id @default(uuid())
+  specialite  String?
+  bio         String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  matieres    ProfesseurMatiere[]
+
+  @@map("professeurs")
+}
+
+model ProfesseurMatiere {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+
+  professeurId  String
+  professeur    Professeur  @relation(fields: [professeurId], references: [id], onDelete: Cascade)
+
+  matiereId     String
+  matiere       Matiere     @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+
+  @@unique([professeurId, matiereId])
+  @@map("professeur_matieres")
+}
+
+model Etudiant {
+  id              String        @id @default(uuid())
+  nom             String
+  prenom          String
+  telephone       String?
+  email           String?
+  sexe            Sexe          @default(M)
+  dateNaissance   DateTime?
+  photo           String?
+  statut          Statut        @default(ACTIF)
+  matricule       String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  etablissementId String
+  etablissement   Etablissement @relation(fields: [etablissementId], references: [id], onDelete: Cascade)
+
+  filiereId       String
+  filiere         Filiere       @relation(fields: [filiereId], references: [id])
+
+  niveauId        String?
+  niveau          Niveau?       @relation(fields: [niveauId], references: [id])
+
+  notes           Note[]
+  absences        Absence[]
+  paiements       Paiement[]
+
+  @@map("etudiants")
+}
+
+model Note {
+  id          String    @id @default(uuid())
+  valeur      Float
+  type        String    @default("DEVOIR")
+  periode     String?
+  annee       String?
+  observation String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  etudiantId  String
+  etudiant    Etudiant  @relation(fields: [etudiantId], references: [id], onDelete: Cascade)
+
+  matiereId   String
+  matiere     Matiere   @relation(fields: [matiereId], references: [id])
+
+  niveauId    String?
+  niveau      Niveau?   @relation(fields: [niveauId], references: [id])
+
+  @@map("notes")
+}
+
+model Absence {
+  id          String      @id @default(uuid())
+  type        TypeAbsence @default(ABSENCE)
+  date        DateTime    @default(now())
+  justifiee   Boolean     @default(false)
+  motif       String?
+  createdAt   DateTime    @default(now())
+
+  etudiantId  String
+  etudiant    Etudiant    @relation(fields: [etudiantId], references: [id], onDelete: Cascade)
+
+  matiereId   String?
+  matiere     Matiere?    @relation(fields: [matiereId], references: [id])
+
+  niveauId    String?
+  niveau      Niveau?     @relation(fields: [niveauId], references: [id])
+
+  saisiParId  String?
+  saisiPar    User?       @relation(fields: [saisiParId], references: [id])
+
+  @@map("absences")
+}
+
+model Paiement {
+  id              String          @id @default(uuid())
+  montant         Float
+  montantPaye     Float           @default(0)
+  statut          StatutPaiement  @default(IMPAYE)
+  typePaiement    String?
+  reference       String?         @unique
+  description     String?
+  datePaiement    DateTime?
+  mois            String?
+  annee           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  etudiantId      String
+  etudiant        Etudiant        @relation(fields: [etudiantId], references: [id], onDelete: Cascade)
+
+  etablissementId String
+  etablissement   Etablissement   @relation(fields: [etablissementId], references: [id])
+
+  @@map("paiements")
+}
