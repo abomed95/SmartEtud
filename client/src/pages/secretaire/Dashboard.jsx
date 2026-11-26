@@ -46,9 +46,9 @@ export default function SecretaireDashboard() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Paiements aujourd\'hui', value: `${(stats?.paiementsAujourdhui || 0).toLocaleString()} FCFA`, icon: CreditCard, color: 'bg-green-50 text-green-700', sub: `${stats?.nbPaiementsAujourdhui || 0} transaction(s)` },
+          { label: 'Paiements aujourd\'hui', value: `${(stats?.paiementsAujourdhui || 0).toLocaleString('fr-FR')} FDJ`, icon: CreditCard, color: 'bg-green-50 text-green-700', sub: `${stats?.nbPaiementsAujourdhui || 0} transaction(s)` },
           { label: 'Absents aujourd\'hui', value: stats?.absentsAujourdhui || 0, icon: Calendar, color: 'bg-red-50 text-red-700', sub: 'Absences du jour' },
-          { label: 'Total impayé', value: `${(stats?.impayes || 0).toLocaleString()} FCFA`, icon: AlertTriangle, color: 'bg-yellow-50 text-yellow-700', sub: `${stats?.nbImpayes || 0} dossier(s)` },
+          { label: 'Total impayé', value: `${(stats?.impayes || 0).toLocaleString('fr-FR')} FDJ`, icon: AlertTriangle, color: 'bg-yellow-50 text-yellow-700', sub: `${stats?.nbImpayes || 0} dossier(s)` },
           { label: 'Étudiants actifs', value: stats?.totalEtudiants || 0, icon: Users, color: 'bg-blue-50 text-blue-700', sub: 'Dans l\'établissement' }
         ].map((item, i) => (
           <motion.div

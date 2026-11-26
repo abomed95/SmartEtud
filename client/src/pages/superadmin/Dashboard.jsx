@@ -28,7 +28,7 @@ export default function SuperAdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="page-title">Tableau de bord</h1>
-          <p className="text-slate-500 text-sm mt-1">Vue globale de la plateforme SmartEdu</p>
+          <p className="text-slate-500 text-sm mt-1">Vue globale de la plateforme Aqoon UNEFD</p>
         </div>
         <Link to="/etablissements" className="btn-primary">
           <Plus size={18} />

@@ -192,7 +192,7 @@ export default function Utilisateurs() {
           )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Mot de passe *</label>
-            <input {...register('password', { required: 'Requis', minLength: { value: 6, message: 'Min 6' } })} type="password" className="input-field" />
+            <input {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Min 8' } })} type="password" className="input-field" />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setModalOpen(false)} className="btn-secondary flex-1">Annuler</button>
@@ -208,7 +208,7 @@ export default function Utilisateurs() {
         <form onSubmit={handleReset(onReset)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nouveau mot de passe *</label>
-            <input {...regReset('newPassword', { required: 'Requis', minLength: { value: 6, message: 'Min 6' } })} type="password" className="input-field" />
+            <input {...regReset('newPassword', { required: 'Requis', minLength: { value: 8, message: 'Min 8' } })} type="password" className="input-field" />
           </div>
           <div className="flex gap-3">
             <button type="button" onClick={() => setResetModal(null)} className="btn-secondary flex-1">Annuler</button>

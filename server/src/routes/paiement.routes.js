@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/paiement.controller');
-const { requireAuth, requireRole } = require('../middlewares/auth.middleware');
+const { requireAuth, requireRole, STAFF } = require('../middlewares/auth.middleware');
 
 router.use(requireAuth);
-router.get('/', ctrl.getAll);
+router.get('/', ctrl.getAll); // ETUDIANT : uniquement ses propres données
 router.get('/:id', ctrl.getById);
 router.post('/', requireRole('SUPER_ADMIN', 'DIRECTEUR', 'SECRETAIRE'), ctrl.create);
 router.put('/:id', requireRole('SUPER_ADMIN', 'DIRECTEUR', 'SECRETAIRE'), ctrl.update);

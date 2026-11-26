@@ -1,43 +1,32 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
-export default function StatCard({ title, value, icon: Icon, color = 'blue', trend, trendLabel, delay = 0 }) {
-  const colors = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    red: 'bg-red-50 text-red-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    purple: 'bg-purple-50 text-purple-600',
-    indigo: 'bg-indigo-50 text-indigo-600'
-  };
+// Pastilles d'icône aux couleurs système Apple
+const tints = {
+  blue: 'bg-[#0071E3]', green: 'bg-[#34C759]', red: 'bg-[#FF3B30]', yellow: 'bg-[#FF9500]',
+  purple: 'bg-[#AF52DE]', indigo: 'bg-[#5856D6]', teal: 'bg-[#30B0C7]', pink: 'bg-[#FF2D55]',
+};
 
+export default function StatCard({ title, value, icon: Icon, color = 'blue', trend, trendLabel, sub, delay = 0 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.3 }}
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
       className="stat-card"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-slate-900">{value}</p>
-          {trendLabel && (
-            <div className="flex items-center gap-1 mt-2">
-              {trend >= 0
-                ? <TrendingUp size={14} className="text-green-500" />
-                : <TrendingDown size={14} className="text-red-500" />
-              }
-              <span className={`text-xs font-medium ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {trendLabel}
-              </span>
-            </div>
-          )}
-        </div>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${colors[color]}`}>
-          <Icon size={22} />
-        </div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-white ${tints[color] || tints.blue}`}>
+          <Icon size={15} strokeWidth={2.25} />
+        </span>
+        <p className="text-[13px] font-medium text-slate-500 truncate">{title}</p>
       </div>
+      <p className="text-[26px] font-bold text-slate-900 tabular leading-none">{value}</p>
+      {(trendLabel || sub) && (
+        <div className="flex items-center gap-1 mt-2 text-[12px]">
+          {trendLabel && (trend >= 0 ? <TrendingUp size={13} className="text-success" /> : <TrendingDown size={13} className="text-danger" />)}
+          <span className={trendLabel ? (trend >= 0 ? 'text-success' : 'text-danger') : 'text-slate-400'}>{trendLabel || sub}</span>
+        </div>
+      )}
     </motion.div>
   );
 }

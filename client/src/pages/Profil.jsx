@@ -3,16 +3,21 @@ import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { User, Lock, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import Segmented from '../components/ui/Segmented';
 import { authAPI } from '../services/api';
 import { Spinner } from '../components/ui/Loader';
 import toast from 'react-hot-toast';
 
 const ROLE_LABELS = {
-  SUPER_ADMIN: 'Super Administrateur', DIRECTEUR: 'Directeur', PROFESSEUR: 'Professeur', SECRETAIRE: 'Secrétaire'
+  SUPER_ADMIN: 'Super Administrateur', DIRECTEUR: 'Direction', PROFESSEUR: 'Enseignant', SECRETAIRE: 'Secrétariat', ETUDIANT: 'Étudiant'
 };
+
+const THEMES = [{ value: 'system', label: 'Auto' }, { value: 'light', label: 'Clair' }, { value: 'dark', label: 'Sombre' }];
 
 export default function Profil() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [saving, setSaving] = useState(false);
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
   const watchNew = watch('newPassword');
@@ -30,7 +35,7 @@ export default function Profil() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div>
-        <h1 className="page-title">Mon Profil</h1>
+        <h1 className="page-title">Réglages</h1>
         <p className="text-slate-500 text-sm mt-1">Gérez vos informations personnelles</p>
       </div>
 
@@ -74,7 +79,7 @@ export default function Profil() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nouveau mot de passe *</label>
-            <input {...register('newPassword', { required: 'Requis', minLength: { value: 6, message: 'Min 6 caractères' } })} type="password" className="input-field" placeholder="••••••••" />
+            <input {...register('newPassword', { required: 'Requis', minLength: { value: 8, message: 'Min 8 caractères' } })} type="password" className="input-field" placeholder="••••••••" />
             {errors.newPassword && <p className="text-red-500 text-xs mt-1">{errors.newPassword.message}</p>}
           </div>
           <div>
@@ -91,6 +96,13 @@ export default function Profil() {
           </button>
         </form>
       </motion.div>
+      <div className="card p-5 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="section-title">Apparence</h2>
+          <p className="text-[13px] text-slate-500">« Auto » suit le réglage de votre appareil.</p>
+        </div>
+        <Segmented options={THEMES} value={theme} onChange={setTheme} />
+      </div>
     </div>
   );
 }

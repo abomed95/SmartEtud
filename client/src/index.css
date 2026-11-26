@@ -2,59 +2,191 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+   Jetons de couleur — inspirés des couleurs système d'Apple (HIG)
+   Accent : bleu « lagon de Djibouti », proche du systemBlue iOS.
+   Valeurs au format « R G B » pour permettre l'opacité Tailwind (/50).
+------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --surface: 255 255 255;
+  --surface-elevated: 255 255 255;
+  --grouped: 242 242 247;
+  --label: 29 29 31;
+  --label-secondary: 110 110 115;
+  --separator: 198 198 200;
+
+  --gray-50: 242 242 247;
+  --gray-100: 229 229 234;
+  --gray-200: 209 209 214;
+  --gray-300: 199 199 204;
+  --gray-400: 142 142 147;
+  --gray-500: 110 110 115;
+  --gray-600: 72 72 74;
+  --gray-700: 58 58 60;
+  --gray-800: 44 44 46;
+  --gray-900: 29 29 31;
+
+  --accent-50: 235 245 255;
+  --accent-100: 214 234 255;
+  --accent-200: 173 213 255;
+  --accent-300: 122 186 255;
+  --accent-400: 64 156 255;
+  --accent-500: 26 136 255;
+  --accent-600: 0 113 227;
+  --accent-700: 0 92 189;
+  --accent-800: 0 70 145;
+  --accent-900: 0 52 110;
+}
+
+.dark {
+  color-scheme: dark;
+  --surface: 28 28 30;
+  --surface-elevated: 44 44 46;
+  --grouped: 0 0 0;
+  --label: 245 245 247;
+  --label-secondary: 152 152 157;
+  --separator: 56 56 58;
+
+  /* échelle inversée : les textes foncés deviennent clairs, les fonds clairs deviennent sombres */
+  --gray-50: 0 0 0;
+  --gray-100: 28 28 30;
+  --gray-200: 44 44 46;
+  --gray-300: 58 58 60;
+  --gray-400: 120 120 128;
+  --gray-500: 152 152 157;
+  --gray-600: 174 174 178;
+  --gray-700: 209 209 214;
+  --gray-800: 229 229 234;
+  --gray-900: 245 245 247;
+
+  --accent-50: 0 38 77;
+  --accent-100: 0 52 104;
+  --accent-200: 0 72 140;
+  --accent-300: 30 110 200;
+  --accent-400: 64 156 255;
+  --accent-500: 10 132 255;
+  --accent-600: 10 132 255;
+  --accent-700: 64 156 255;
+  --accent-800: 122 186 255;
+  --accent-900: 173 213 255;
+}
+
 @layer base {
-  * { @apply border-slate-200; }
+  * { @apply border-separator/60; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     @apply bg-slate-50 text-slate-900 font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-feature-settings: "kern", "liga", "calt";
+    letter-spacing: -0.011em;
   }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-slate-100; }
-  ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
+  h1, h2, h3 { letter-spacing: -0.022em; }
+  ::selection { background: rgb(var(--accent-500) / 0.25); }
+  :focus-visible { outline: 3px solid rgb(var(--accent-500) / 0.5); outline-offset: 2px; border-radius: 8px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--gray-400) / 0.4); border-radius: 9999px; border: 2px solid transparent; background-clip: content-box; }
+  /* Les pages existantes utilisent bg-white : on le mappe sur la surface du thème */
+  .dark .bg-white { background-color: rgb(var(--surface)); }
+  .dark .bg-white\/80 { background-color: rgb(var(--surface) / 0.8); }
+  /* Pastels hérités des anciennes pages → teintes translucides en mode sombre */
+  .dark .bg-green-50, .dark .bg-green-100 { background-color: rgb(48 209 88 / 0.14); }
+  .dark .text-green-600, .dark .text-green-700, .dark .text-green-800 { color: rgb(48 209 88); }
+  .dark .border-green-100, .dark .border-green-200 { border-color: rgb(48 209 88 / 0.3); }
+  .dark .bg-red-50, .dark .bg-red-100 { background-color: rgb(255 69 58 / 0.14); }
+  .dark .text-red-600, .dark .text-red-700, .dark .text-red-800 { color: rgb(255 69 58); }
+  .dark .border-red-100, .dark .border-red-200 { border-color: rgb(255 69 58 / 0.3); }
+  .dark .bg-yellow-50, .dark .bg-yellow-100 { background-color: rgb(255 214 10 / 0.14); }
+  .dark .text-yellow-600, .dark .text-yellow-700, .dark .text-yellow-800 { color: rgb(255 214 10); }
+  .dark .border-yellow-100, .dark .border-yellow-200 { border-color: rgb(255 214 10 / 0.3); }
+  .dark .bg-orange-50, .dark .bg-orange-100 { background-color: rgb(255 159 10 / 0.14); }
+  .dark .text-orange-600, .dark .text-orange-700, .dark .text-orange-800 { color: rgb(255 159 10); }
+  .dark .border-orange-100, .dark .border-orange-200 { border-color: rgb(255 159 10 / 0.3); }
+  .dark .bg-blue-50, .dark .bg-blue-100 { background-color: rgb(10 132 255 / 0.14); }
+  .dark .text-blue-600, .dark .text-blue-700, .dark .text-blue-800 { color: rgb(10 132 255); }
+  .dark .border-blue-100, .dark .border-blue-200 { border-color: rgb(10 132 255 / 0.3); }
+  .dark .bg-purple-50, .dark .bg-purple-100 { background-color: rgb(191 90 242 / 0.14); }
+  .dark .text-purple-600, .dark .text-purple-700, .dark .text-purple-800 { color: rgb(191 90 242); }
+  .dark .border-purple-100, .dark .border-purple-200 { border-color: rgb(191 90 242 / 0.3); }
+  .dark .bg-pink-50, .dark .bg-pink-100 { background-color: rgb(255 55 95 / 0.14); }
+  .dark .text-pink-600, .dark .text-pink-700, .dark .text-pink-800 { color: rgb(255 55 95); }
+  .dark .border-pink-100, .dark .border-pink-200 { border-color: rgb(255 55 95 / 0.3); }
+  .dark .bg-indigo-50, .dark .bg-indigo-100 { background-color: rgb(94 92 230 / 0.14); }
+  .dark .text-indigo-600, .dark .text-indigo-700, .dark .text-indigo-800 { color: rgb(94 92 230); }
+  .dark .border-indigo-100, .dark .border-indigo-200 { border-color: rgb(94 92 230 / 0.3); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
 }
 
 @layer components {
+  /* Boutons — capsule arrondie, cible tactile ≥ 44 px sur mobile (HIG) */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 min-h-[40px] bg-primary-600 text-white text-[15px] font-semibold rounded-full
+           hover:bg-primary-700 active:scale-[0.97] transition-all duration-150 ease-apple
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-white text-slate-700 font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 px-4 min-h-[40px] bg-slate-100 text-primary-600 text-[15px] font-semibold rounded-full
+           hover:bg-slate-200 active:scale-[0.97] transition-all duration-150 ease-apple disabled:opacity-40;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 px-4 min-h-[40px] bg-danger text-white text-[15px] font-semibold rounded-full
+           hover:brightness-95 active:scale-[0.97] transition-all duration-150 ease-apple disabled:opacity-40;
   }
+  .btn-plain { @apply inline-flex items-center gap-1.5 text-primary-600 text-[15px] font-medium hover:opacity-70 transition-opacity; }
+  .icon-btn { @apply inline-flex items-center justify-center w-9 h-9 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors; }
+
+  /* Champs — style « grouped » iOS */
   .input-field {
-    @apply w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-slate-400 transition-all duration-200;
+    @apply w-full px-3.5 min-h-[44px] bg-slate-100/70 border-0 rounded-xl text-[15px] text-slate-900 placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:bg-surface transition-all duration-150;
   }
-  .card {
-    @apply bg-white rounded-xl border border-slate-100 shadow-card;
+  textarea.input-field { @apply py-3; }
+  label { @apply text-slate-600; }
+
+  /* Cartes : surface blanche, coins continus, séparateur hairline */
+  .card { @apply bg-surface rounded-2xl shadow-card; }
+  .stat-card { @apply card p-5 hover:shadow-card-hover transition-shadow duration-200; }
+  .material {
+    @apply bg-surface/75 backdrop-blur-xl backdrop-saturate-150;
   }
-  .stat-card {
-    @apply card p-6 hover:shadow-card-hover transition-shadow duration-200;
-  }
-  .badge-success { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800; }
-  .badge-danger { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800; }
-  .badge-warning { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800; }
-  .badge-info { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800; }
-  .badge-gray { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700; }
-  .table-header { @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider; }
-  .table-cell { @apply px-4 py-3 text-sm text-slate-700; }
-  .table-row { @apply border-b border-slate-50 hover:bg-slate-50/50 transition-colors duration-100; }
+
+  /* Badges : teintes translucides lisibles en clair comme en sombre */
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+  .badge-success { @apply badge bg-success/15 text-[#248A3D] dark:text-[#30D158]; }
+  .badge-danger  { @apply badge bg-danger/15 text-[#D70015] dark:text-[#FF453A]; }
+  .badge-warning { @apply badge bg-warning/15 text-[#C93400] dark:text-[#FF9F0A]; }
+  .badge-info    { @apply badge bg-primary-500/15 text-primary-700; }
+  .badge-gray    { @apply badge bg-slate-400/15 text-slate-600; }
+
+  /* Tableaux — listes groupées */
+  .table-header { @apply px-4 py-2.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide; }
+  .table-cell { @apply px-4 py-3 text-[14px] text-slate-700; }
+  .table-row { @apply border-b border-separator/40 last:border-0 hover:bg-slate-50/60 transition-colors duration-100; }
+  thead.bg-slate-50, thead { @apply bg-transparent; }
+
+  /* Navigation latérale */
   .sidebar-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/10 transition-all duration-200;
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] font-medium text-slate-600 hover:bg-slate-400/10 transition-colors duration-150;
   }
-  .sidebar-link.active { @apply text-white bg-white/15 font-semibold; }
-  .page-title { @apply text-2xl font-bold text-slate-900; }
-  .section-title { @apply text-lg font-semibold text-slate-800; }
+  .sidebar-link.active { @apply bg-primary-600 text-white hover:bg-primary-600; }
+  .sidebar-link.active svg { @apply text-white; }
+
+  /* Titres « Large Title » */
+  .page-title { @apply text-[28px] sm:text-[34px] font-bold text-slate-900 leading-tight; }
+  .section-title { @apply text-[17px] font-semibold text-slate-900; }
+  .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-primary-600; }
+
+  /* Contrôle segmenté */
+  .segmented { @apply inline-flex p-0.5 bg-slate-400/15 rounded-[9px]; }
+  .segmented > button { @apply px-3 py-1 text-[13px] font-medium rounded-[7px] text-slate-700 transition-all duration-200; }
+  .segmented > button[aria-pressed="true"] { @apply bg-surface text-slate-900 shadow-sm dark:bg-slate-300; }
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent;
-  }
-  .glass {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-  }
+  .text-gradient { @apply bg-gradient-to-r from-primary-600 to-dj-green bg-clip-text text-transparent; }
+  .glass { backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+  .tabular { font-variant-numeric: tabular-nums; }
 }

@@ -2,23 +2,35 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, LogIn, GraduationCap } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 import { Spinner } from '../../components/ui/Loader';
+import { LogoMark } from '../../components/brand/Logo';
+import { BRAND } from '../../config/brand';
+
+// Comptes de démo affichés uniquement en développement ou si VITE_DEMO=true
+const DEMO = import.meta.env.DEV || import.meta.env.VITE_DEMO === 'true';
+const DEMO_ACCOUNTS = [
+  ['Étudiant', 'etudiant@unefd.dj', 'Etudiant@2025!'],
+  ['Enseignant', 'ahmed.ibrahim@unefd.dj', 'Prof@2025!'],
+  ['Secrétariat', 'secretariat@unefd.dj', 'Secret@2025!'],
+  ['Direction', 'directeur@unefd.dj', 'Directeur@2025!'],
+  ['Super Admin', 'admin@aqoon.dj', 'Admin@2025!'],
+];
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
       const user = await login(data.email, data.password);
-      toast.success(`Bienvenue, ${user.prenom || user.nom} !`);
+      toast.success(`Bienvenue, ${user.prenom || user.nom}`);
       navigate('/dashboard', { replace: true });
     } catch (err) {
       toast.error(err.error || 'Identifiants incorrects');
@@ -28,96 +40,76 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-primary-900 flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-600/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-800/20 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-[100dvh] bg-slate-50 flex flex-col">
+      {/* Bandeau discret aux couleurs du drapeau */}
+      <div className="h-1 flex"><div className="flex-[62] bg-dj-blue" /><div className="flex-[38] bg-dj-green" /></div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative z-10"
-      >
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary-600/30">
-            <GraduationCap size={32} className="text-white" />
+      <div className="flex-1 flex items-center justify-center p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+          className="w-full max-w-[380px]"
+        >
+          <div className="text-center mb-8">
+            <LogoMark size={76} className="mx-auto mb-5 rounded-[22%] shadow-xl shadow-primary-600/20" />
+            <h1 className="text-[34px] font-bold text-slate-900 tracking-tight">{BRAND.nom} <span className="text-primary-600">{BRAND.organisation}</span></h1>
+            <p className="text-[17px] text-slate-500 mt-1">{BRAND.slogan}</p>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">SmartEdu ERP</h1>
-          <p className="text-slate-400">Plateforme de gestion scolaire moderne</p>
-        </div>
 
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-xl font-semibold text-white mb-6">Connexion</h2>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Adresse email</label>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            {/* Champs groupés comme dans Réglages iOS */}
+            <div className="card overflow-hidden">
+              <label className="sr-only" htmlFor="email">Adresse email</label>
               <input
-                {...register('email', {
-                  required: 'Email requis',
-                  pattern: { value: /\S+@\S+\.\S+/, message: 'Email invalide' }
-                })}
-                type="email"
-                placeholder="vous@exemple.com"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                autoComplete="email"
+                id="email" type="email" autoComplete="username" placeholder="Adresse email"
+                {...register('email', { required: 'Email requis', pattern: { value: /\S+@\S+\.\S+/, message: 'Email invalide' } })}
+                className="w-full px-4 h-[52px] bg-transparent text-[17px] text-slate-900 placeholder-slate-400 focus:outline-none border-b border-separator/60"
               />
-              {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Mot de passe</label>
               <div className="relative">
+                <label className="sr-only" htmlFor="password">Mot de passe</label>
                 <input
+                  id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Mot de passe"
                   {...register('password', { required: 'Mot de passe requis' })}
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 pr-12 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  autoComplete="current-password"
+                  className="w-full px-4 pr-12 h-[52px] bg-transparent text-[17px] text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white transition-colors"
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 icon-btn"
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
             </div>
+            {(errors.email || errors.password) && (
+              <p className="text-danger text-[13px] mt-2 px-4">{errors.email?.message || errors.password?.message}</p>
+            )}
 
-            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-600/30">
-              {loading ? <Spinner size={20} className="text-white" /> : <LogIn size={20} />}
-              {loading ? 'Connexion...' : 'Se connecter'}
+            <button type="submit" disabled={loading} className="btn-primary w-full min-h-[50px] text-[17px] mt-5">
+              {loading ? <Spinner size={18} className="text-white" /> : <>Se connecter <ArrowRight size={18} /></>}
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-xs text-slate-400 text-center mb-3">Comptes de démonstration :</p>
-            <div className="space-y-1.5 text-xs text-slate-400">
-              <div className="flex justify-between bg-white/5 px-3 py-1.5 rounded-lg">
-                <span>👑 Super Admin</span>
-                <span className="font-mono">admin@smartedu.com</span>
-              </div>
-              <div className="flex justify-between bg-white/5 px-3 py-1.5 rounded-lg">
-                <span>🏫 Directeur</span>
-                <span className="font-mono">directeur@cfp-djibouti.dj</span>
-              </div>
-              <div className="flex justify-between bg-white/5 px-3 py-1.5 rounded-lg">
-                <span>👩‍💼 Secrétaire</span>
-                <span className="font-mono">secretaire@cfp-djibouti.dj</span>
+          <p className="text-center text-[13px] text-slate-400 mt-4">
+            Mot de passe oublié ? Contactez le secrétariat de votre établissement.
+          </p>
+
+          {DEMO && (
+            <div className="mt-8">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 px-4 mb-1.5">Comptes de démonstration</p>
+              <div className="card overflow-hidden">
+                {DEMO_ACCOUNTS.map(([role, email, pwd]) => (
+                  <button key={email} type="button"
+                    onClick={() => { setValue('email', email); setValue('password', pwd); }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 border-b border-separator/40 last:border-0 text-left hover:bg-slate-400/5">
+                    <span className="text-[15px] text-slate-900">{role}</span>
+                    <span className="text-[13px] text-slate-400 font-mono truncate ml-3">{email}</span>
+                  </button>
+                ))}
               </div>
             </div>
-            <p className="text-center text-xs text-slate-500 mt-2">Mot de passe selon le rôle (voir README)</p>
-          </div>
-        </div>
+          )}
 
-        <p className="text-center text-slate-500 text-xs mt-6">
-          © 2024 SmartEdu ERP · Tous droits réservés
-        </p>
-      </motion.div>
+          <p className="text-center text-[12px] text-slate-400 mt-8">© {BRAND.annee} {BRAND.complet} · {BRAND.pays}</p>
+        </motion.div>
+      </div>
     </div>
   );
 }

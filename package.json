@@ -1,7 +1,7 @@
 {
-  "name": "smartedu-erp",
+  "name": "aqoon-unefd",
   "version": "1.0.0",
-  "description": "SmartEdu ERP - Plateforme de gestion scolaire moderne",
+  "description": "Aqoon UNEFD — le campus connecté de Djibouti",
   "scripts": {
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -12,13 +12,11 @@
     "db:seed": "cd server && npm run db:seed",
     "db:studio": "cd server && npm run db:studio",
     "db:reset": "cd server && npm run db:reset",
-    "start": "cd server && npm start"
+    "start": "cd server && npm start",
+    "db:deploy": "cd server && npm run db:deploy",
+    "test": "cd server && npm test"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "prisma": "^5.22.0"
-  },
-  "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "concurrently": "^8.2.2"
   }
 }

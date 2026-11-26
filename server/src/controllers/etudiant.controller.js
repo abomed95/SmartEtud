@@ -1,124 +1,130 @@
+const bcrypt = require('bcryptjs');
 const prisma = require('../utils/prisma');
-const { generateMatricule } = require('../utils/helpers');
+const { generateMatricule, generateTempPassword } = require('../utils/helpers');
+const { ah, HttpError, etabIdFor, assertSameEtab, loadEtudiantForUser } = require('../utils/scope');
 
-const getAll = async (req, res) => {
-  try {
-    const { filiereId, niveauId, statut, search } = req.query;
-    const etablissementId = req.user.role === 'SUPER_ADMIN'
-      ? req.query.etablissementId
-      : req.user.etablissementId;
+const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k] === '' ? null : o[k]]));
 
-    const where = {};
-    if (etablissementId) where.etablissementId = etablissementId;
-    if (filiereId) where.filiereId = filiereId;
-    if (niveauId) where.niveauId = niveauId;
-    if (statut) where.statut = statut;
-    if (search) {
-      where.OR = [
-        { nom: { contains: search, mode: 'insensitive' } },
-        { prenom: { contains: search, mode: 'insensitive' } },
-        { telephone: { contains: search } },
-        { matricule: { contains: search, mode: 'insensitive' } }
-      ];
-    }
-
-    const etudiants = await prisma.etudiant.findMany({
-      where,
-      include: {
-        filiere: { select: { id: true, nom: true } },
-        niveau: { select: { id: true, nom: true } },
-        _count: { select: { absences: true, notes: true } }
-      },
-      orderBy: [{ nom: 'asc' }, { prenom: 'asc' }]
-    });
-    res.json(etudiants);
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+/** Vérifie que filière (et niveau) appartiennent bien à l'établissement. */
+const checkFiliere = async (etablissementId, filiereId, niveauId) => {
+  if (!filiereId) return;
+  const filiere = await prisma.filiere.findUnique({ where: { id: filiereId }, include: { niveaux: { select: { id: true } } } });
+  if (!filiere || filiere.etablissementId !== etablissementId) throw new HttpError(400, 'Filière invalide');
+  if (niveauId && !filiere.niveaux.some((n) => n.id === niveauId)) throw new HttpError(400, 'Niveau invalide pour cette filière');
 };
 
-const getById = async (req, res) => {
-  try {
-    const etudiant = await prisma.etudiant.findUnique({
-      where: { id: req.params.id },
-      include: {
-        filiere: true,
-        niveau: true,
-        notes: { include: { matiere: true }, orderBy: { createdAt: 'desc' } },
-        absences: { include: { matiere: true }, orderBy: { date: 'desc' } },
-        paiements: { orderBy: { createdAt: 'desc' } }
-      }
-    });
-    if (!etudiant) return res.status(404).json({ error: 'Étudiant introuvable' });
-    res.json(etudiant);
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
+const getAll = ah(async (req, res) => {
+  const { filiereId, niveauId, statut, search } = req.query;
+  const etablissementId = etabIdFor(req);
+  const where = {};
+  if (etablissementId) where.etablissementId = etablissementId;
+  if (filiereId) where.filiereId = filiereId;
+  if (niveauId) where.niveauId = niveauId;
+  if (statut) where.statut = statut;
+  if (search) {
+    where.OR = [
+      { nom: { contains: search, mode: 'insensitive' } },
+      { prenom: { contains: search, mode: 'insensitive' } },
+      { telephone: { contains: search } },
+      { matricule: { contains: search, mode: 'insensitive' } }
+    ];
   }
-};
+  const etudiants = await prisma.etudiant.findMany({
+    where,
+    include: {
+      filiere: { select: { id: true, nom: true } },
+      niveau: { select: { id: true, nom: true } },
+      user: { select: { id: true, email: true, actif: true } },
+      _count: { select: { absences: true, notes: true } }
+    },
+    orderBy: [{ nom: 'asc' }, { prenom: 'asc' }]
+  });
+  res.json(etudiants);
+});
 
-const create = async (req, res) => {
-  try {
-    const { nom, prenom, telephone, email, sexe, dateNaissance, filiereId, niveauId, photo } = req.body;
-    if (!nom || !prenom || !filiereId) {
-      return res.status(400).json({ error: 'Nom, prénom et filière sont requis' });
+const getById = ah(async (req, res) => {
+  const etudiant = await loadEtudiantForUser(req.user, req.params.id, {
+    filiere: true,
+    niveau: true,
+    notes: { include: { matiere: true }, orderBy: { createdAt: 'desc' } },
+    absences: { include: { matiere: true }, orderBy: { date: 'desc' } },
+    paiements: { orderBy: { createdAt: 'desc' } }
+  });
+  res.json(etudiant);
+});
+
+const create = ah(async (req, res) => {
+  const { nom, prenom, filiereId, niveauId } = req.body;
+  if (!nom || !prenom || !filiereId) throw new HttpError(400, 'Nom, prénom et filière sont requis');
+
+  const etablissementId = etabIdFor(req);
+  if (!etablissementId) throw new HttpError(400, 'Établissement requis');
+  await checkFiliere(etablissementId, filiereId, niveauId || null);
+
+  let matricule = generateMatricule();
+  while (await prisma.etudiant.findUnique({ where: { matricule } })) matricule = generateMatricule();
+
+  const data = pick(req.body, ['nom', 'prenom', 'telephone', 'email', 'sexe', 'filiereId', 'niveauId']);
+  const etudiant = await prisma.etudiant.create({
+    data: {
+      ...data,
+      sexe: data.sexe || 'M',
+      dateNaissance: req.body.dateNaissance ? new Date(req.body.dateNaissance) : null,
+      etablissementId,
+      matricule
     }
+  });
+  res.status(201).json({ message: 'Étudiant inscrit avec succès', etudiant });
+});
 
-    const etablissementId = req.user.role === 'SUPER_ADMIN'
-      ? req.body.etablissementId
-      : req.user.etablissementId;
+const update = ah(async (req, res) => {
+  const existing = await loadEtudiantForUser(req.user, req.params.id);
+  const data = pick(req.body, ['nom', 'prenom', 'telephone', 'email', 'sexe', 'filiereId', 'niveauId', 'statut']);
+  await checkFiliere(existing.etablissementId, data.filiereId || existing.filiereId, data.niveauId);
+  if (req.body.dateNaissance) data.dateNaissance = new Date(req.body.dateNaissance);
+  const etudiant = await prisma.etudiant.update({ where: { id: existing.id }, data });
+  res.json({ message: 'Étudiant modifié', etudiant });
+});
 
-    let matricule = generateMatricule();
-    let exists = await prisma.etudiant.findUnique({ where: { matricule } });
-    while (exists) {
-      matricule = generateMatricule();
-      exists = await prisma.etudiant.findUnique({ where: { matricule } });
-    }
+const remove = ah(async (req, res) => {
+  const existing = await loadEtudiantForUser(req.user, req.params.id);
+  await prisma.$transaction(async (tx) => {
+    await tx.etudiant.delete({ where: { id: existing.id } });
+    if (existing.userId) await tx.user.delete({ where: { id: existing.userId } });
+  });
+  res.json({ message: 'Étudiant supprimé' });
+});
 
-    const etudiant = await prisma.etudiant.create({
+/**
+ * Crée (ou réinitialise) l'accès au portail étudiant.
+ * Renvoie un mot de passe temporaire à transmettre à l'étudiant (affiché une seule fois).
+ */
+const createCompte = ah(async (req, res) => {
+  const etudiant = await loadEtudiantForUser(req.user, req.params.id);
+  const email = (req.body.email || etudiant.email || '').toLowerCase().trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) throw new HttpError(400, 'Adresse email valide requise pour créer l\'accès');
+
+  const tempPassword = generateTempPassword();
+  const hashed = await bcrypt.hash(tempPassword, 12);
+
+  if (etudiant.userId) {
+    await prisma.user.update({ where: { id: etudiant.userId }, data: { password: hashed, actif: true } });
+    return res.json({ message: 'Mot de passe du portail réinitialisé', email, tempPassword });
+  }
+
+  const taken = await prisma.user.findUnique({ where: { email } });
+  if (taken) throw new HttpError(400, 'Cet email est déjà utilisé par un autre compte');
+
+  await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
       data: {
-        nom, prenom, telephone, email, photo,
-        sexe: sexe || 'M',
-        dateNaissance: dateNaissance ? new Date(dateNaissance) : null,
-        filiereId, niveauId,
-        etablissementId,
-        matricule
+        nom: etudiant.nom, prenom: etudiant.prenom, email, telephone: etudiant.telephone,
+        password: hashed, role: 'ETUDIANT', etablissementId: etudiant.etablissementId
       }
     });
-    res.status(201).json({ message: 'Étudiant inscrit avec succès', etudiant });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erreur lors de l\'inscription' });
-  }
-};
+    await tx.etudiant.update({ where: { id: etudiant.id }, data: { userId: user.id, email } });
+  });
+  res.status(201).json({ message: 'Accès portail créé', email, tempPassword });
+});
 
-const update = async (req, res) => {
-  try {
-    const { nom, prenom, telephone, email, sexe, dateNaissance, filiereId, niveauId, statut, photo } = req.body;
-    const etudiant = await prisma.etudiant.update({
-      where: { id: req.params.id },
-      data: {
-        nom, prenom, telephone, email, photo,
-        sexe,
-        dateNaissance: dateNaissance ? new Date(dateNaissance) : undefined,
-        filiereId, niveauId, statut
-      }
-    });
-    res.json({ message: 'Étudiant modifié', etudiant });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
-
-const remove = async (req, res) => {
-  try {
-    if (['SECRETAIRE'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Vous n\'avez pas la permission de supprimer un étudiant' });
-    }
-    await prisma.etudiant.delete({ where: { id: req.params.id } });
-    res.json({ message: 'Étudiant supprimé' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
-
-module.exports = { getAll, getById, create, update, remove };
+module.exports = { getAll, getById, create, update, remove, createCompte, checkFiliere, assertSameEtab };

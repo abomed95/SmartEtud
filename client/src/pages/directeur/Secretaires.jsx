@@ -171,7 +171,7 @@ export default function Secretaires() {
           {!editSec && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Mot de passe *</label>
-              <input {...register('password', { required: 'Requis', minLength: { value: 6, message: 'Min 6' } })} type="password" className="input-field" />
+              <input {...register('password', { required: 'Requis', minLength: { value: 8, message: 'Min 8' } })} type="password" className="input-field" />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
           )}
@@ -189,7 +189,7 @@ export default function Secretaires() {
         <form onSubmit={handleReset(onResetPassword)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nouveau mot de passe *</label>
-            <input {...regReset('newPassword', { required: 'Requis', minLength: { value: 6, message: 'Min 6' } })} type="password" className="input-field" />
+            <input {...regReset('newPassword', { required: 'Requis', minLength: { value: 8, message: 'Min 8' } })} type="password" className="input-field" />
           </div>
           <div className="flex gap-3">
             <button type="button" onClick={() => setResetModal(null)} className="btn-secondary flex-1">Annuler</button>

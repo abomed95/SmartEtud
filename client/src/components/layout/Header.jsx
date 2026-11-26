@@ -1,46 +1,31 @@
-import { Menu, Bell, Search } from 'lucide-react';
+import { Moon, Sun, MonitorSmartphone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+import { LogoMark } from '../brand/Logo';
 
-export default function Header({ onToggleSidebar }) {
+const NEXT = { system: 'light', light: 'dark', dark: 'system' };
+const ICON = { system: MonitorSmartphone, light: Sun, dark: Moon };
+const LABEL = { system: 'Thème : automatique', light: 'Thème : clair', dark: 'Thème : sombre' };
+
+/** Barre supérieure translucide, compacte (le grand titre est porté par chaque page). */
+export default function Header() {
   const { user } = useAuth();
-
-  const greetings = () => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Bonjour';
-    if (h < 18) return 'Bon après-midi';
-    return 'Bonsoir';
-  };
+  const { theme, setTheme } = useTheme();
+  const ThemeIcon = ICON[theme];
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center px-4 gap-4 sticky top-0 z-20 flex-shrink-0">
-      <button
-        onClick={onToggleSidebar}
-        className="p-2 rounded-lg hover:bg-slate-100 transition-colors lg:hidden"
-      >
-        <Menu size={20} className="text-slate-600" />
+    <header className="h-12 lg:h-14 material border-b border-separator/40 flex items-center px-4 lg:px-8 gap-3 sticky top-0 z-20 flex-shrink-0">
+      <Link to="/dashboard" className="lg:hidden"><LogoMark size={28} className="rounded-[22%]" /></Link>
+      <p className="flex-1 text-[13px] text-slate-500 truncate">
+        {user?.etablissement?.nom || 'Plateforme'}
+      </p>
+      <button onClick={() => setTheme(NEXT[theme])} className="icon-btn" title={LABEL[theme]} aria-label={LABEL[theme]}>
+        <ThemeIcon size={18} />
       </button>
-
-      <div className="flex-1">
-        <p className="text-sm font-medium text-slate-900 hidden sm:block">
-          {greetings()}, <span className="text-primary-600">{user?.prenom || user?.nom}</span> 👋
-        </p>
-        {user?.etablissement && (
-          <p className="text-xs text-slate-400">{user.etablissement.nom}</p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
-          <Bell size={20} className="text-slate-500" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
-
-        <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center cursor-pointer">
-          <span className="text-white text-sm font-bold">
-            {user?.nom?.charAt(0)?.toUpperCase()}
-          </span>
-        </div>
-      </div>
+      <Link to="/profil" className="lg:hidden w-8 h-8 rounded-full bg-gradient-to-br from-dj-blue to-primary-600 flex items-center justify-center text-white text-sm font-bold" aria-label="Profil">
+        {(user?.prenom || user?.nom)?.charAt(0)?.toUpperCase()}
+      </Link>
     </header>
   );
 }

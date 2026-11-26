@@ -1,0 +1,58 @@
+# Pipeline Cloud Build : construire → pousser → migrer la base → déployer.
+# Lancement manuel : ./deploy/gcp/deploy.sh   (ou déclencheur GitHub sur la branche main)
+substitutions:
+  _REGION: europe-west1
+  _REPO: aqoon
+  _SERVICE: aqoon-unefd
+  _SQL_INSTANCE: aqoon-pg
+  _BUCKET: ""            # obligatoire : bucket des vidéos (créé par setup.sh)
+  _SA: ""                # obligatoire : compte de service d'exécution
+  _CLIENT_URL: ""        # URL publique (ex. https://aqoon.unefd.dj) — utilisée pour CORS
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID', '.']
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID']
+
+  # Migrations Prisma exécutées par un Cloud Run Job (même image, accès Cloud SQL par socket)
+  - id: migrate
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        gcloud run jobs deploy ${_SERVICE}-migrate \
+          --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID \
+          --region=${_REGION} --service-account=${_SA} \
+          --set-cloudsql-instances=$PROJECT_ID:${_REGION}:${_SQL_INSTANCE} \
+          --set-secrets=DATABASE_URL=aqoon-database-url:latest \
+          --command=npx --args=prisma,migrate,deploy \
+          --max-retries=0 --task-timeout=600s
+        gcloud run jobs execute ${_SERVICE}-migrate --region=${_REGION} --wait
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        gcloud run deploy ${_SERVICE} \
+          --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID \
+          --region=${_REGION} --service-account=${_SA} --allow-unauthenticated \
+          --add-cloudsql-instances=$PROJECT_ID:${_REGION}:${_SQL_INSTANCE} \
+          --set-secrets=DATABASE_URL=aqoon-database-url:latest,JWT_SECRET=aqoon-jwt-secret:latest,ANTHROPIC_API_KEY=aqoon-anthropic-key:latest \
+          --set-env-vars=GCS_BUCKET=${_BUCKET},CLIENT_URL=${_CLIENT_URL},APP_NAME=Aqoon\ UNEFD,DEVISE=FDJ \
+          --cpu=1 --memory=512Mi --concurrency=80 \
+          --min-instances=0 --max-instances=10 --timeout=300 \
+          --cpu-boost --execution-environment=gen2
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID'

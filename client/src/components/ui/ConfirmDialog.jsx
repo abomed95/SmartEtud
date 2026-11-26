@@ -1,27 +1,24 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
 
+/** Alerte de confirmation façon iOS : titre, message, deux boutons séparés par un filet. */
 export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText = 'Supprimer', danger = true }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" role="alertdialog" aria-modal="true">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40" onClick={onClose} />
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-            className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl z-10 p-6"
+            initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-[290px] material rounded-2xl z-10 overflow-hidden text-center"
           >
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto ${danger ? 'bg-red-100' : 'bg-yellow-100'}`}>
-              <AlertTriangle size={24} className={danger ? 'text-red-600' : 'text-yellow-600'} />
+            <div className="px-5 pt-5 pb-4">
+              <h3 className="text-[17px] font-semibold text-slate-900">{title}</h3>
+              <p className="text-[13px] text-slate-600 mt-1">{message}</p>
             </div>
-            <h3 className="text-lg font-semibold text-center text-slate-900 mb-2">{title}</h3>
-            <p className="text-sm text-slate-500 text-center mb-6">{message}</p>
-            <div className="flex gap-3">
-              <button onClick={onClose} className="btn-secondary flex-1">Annuler</button>
-              <button onClick={onConfirm} className={`flex-1 ${danger ? 'btn-danger' : 'btn-primary'}`}>{confirmText}</button>
+            <div className="grid grid-cols-2 border-t border-separator/60">
+              <button onClick={onClose} className="py-3 text-[17px] text-primary-600 border-r border-separator/60 active:bg-slate-400/10">Annuler</button>
+              <button onClick={onConfirm} className={`py-3 text-[17px] font-semibold active:bg-slate-400/10 ${danger ? 'text-danger' : 'text-primary-600'}`}>{confirmText}</button>
             </div>
           </motion.div>
         </div>

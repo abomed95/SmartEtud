@@ -51,7 +51,7 @@ export default function DirecteurDashboard() {
             </div>
             <div>
               <p className="text-xs text-slate-500">Revenus collectés</p>
-              <p className="text-xl font-bold text-slate-900">{(stats?.revenus || 0).toLocaleString()} <span className="text-sm font-normal text-slate-500">FCFA</span></p>
+              <p className="text-xl font-bold text-slate-900">{(stats?.revenus || 0).toLocaleString('fr-FR')} <span className="text-sm font-normal text-slate-500">FDJ</span></p>
             </div>
           </div>
         </motion.div>
@@ -63,7 +63,7 @@ export default function DirecteurDashboard() {
             </div>
             <div>
               <p className="text-xs text-slate-500">Impayés</p>
-              <p className="text-xl font-bold text-red-600">{(stats?.impayes || 0).toLocaleString()} <span className="text-sm font-normal text-slate-500">FCFA</span></p>
+              <p className="text-xl font-bold text-red-600">{(stats?.impayes || 0).toLocaleString('fr-FR')} <span className="text-sm font-normal text-slate-500">FDJ</span></p>
             </div>
           </div>
         </motion.div>
@@ -92,14 +92,14 @@ export default function DirecteurDashboard() {
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(142,142,147,0.18)" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#8E8E93' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#8E8E93' }} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '10px', color: '#f1f5f9', fontSize: '12px' }}
-                  formatter={v => [`${v.toLocaleString()} FCFA`, 'Revenus']}
+                  contentStyle={{ background: 'rgba(28,28,30,.92)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                  formatter={v => [`${v.toLocaleString('fr-FR')} FDJ`, 'Revenus']}
                 />
-                <Bar dataKey="revenus" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenus" fill="#0071E3" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
