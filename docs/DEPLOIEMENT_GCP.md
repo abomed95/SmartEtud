@@ -72,3 +72,26 @@ Conseil Djibouti : pour limiter la bande passante (forfaits mobiles des étudian
 - **Connexions SQL** : `connection_limit=5` par instance × 10 instances max = 50 connexions ; adapter si vous augmentez `max-instances`.
 - **Sauvegardes** : tester une restauration avant la mise en production.
 - **Journaux** : Cloud Logging reçoit les journaux `combined` ; créer une alerte sur les erreurs 5xx.
+
+## 7. Instance Cloud SQL partagée entre plusieurs applications
+
+Une seule instance PostgreSQL peut héberger plusieurs applications : **une base + un utilisateur par application**.
+
+```bash
+export SQL_INSTANCE=amd-postgres      # nom générique, pas lié à une application
+./deploy/gcp/setup.sh                 # crée l'instance si elle n'existe pas, puis la base « aqoon »
+```
+
+Ensuite, isoler l'application (voir `deploy/gcp/isolation.sql`) :
+
+```bash
+gcloud sql users set-password postgres --instance=$SQL_INSTANCE --prompt-for-password
+gcloud sql connect $SQL_INSTANCE --user=postgres --database=aqoon < deploy/gcp/isolation.sql
+```
+
+Pour une future application : `gcloud sql databases create autre_app --instance=$SQL_INSTANCE`, un utilisateur dédié, son propre secret `DATABASE_URL`, puis le même script d'isolation.
+
+Points d'attention :
+- **Connexions** : `db-g1-small` accepte ~50 connexions au total ; chaque application les consomme via `connection_limit`. Passer à `db-custom-1-3840` (≈ 100+) quand une 2e application arrive en production.
+- **Pannes et maintenance** : une instance partagée = un point de défaillance commun. Activer la haute disponibilité (`--availability-type=REGIONAL`) en production.
+- **Région** : déployer les futures applications Cloud Run dans la même région que l'instance.
