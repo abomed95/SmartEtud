@@ -34,7 +34,7 @@ gcloud artifacts repositories describe "$REPO" --location="$REGION" >/dev/null 2
 
 echo "▶ Compte de service d'exécution (privilèges minimaux)…"
 gcloud iam service-accounts describe "$SA" >/dev/null 2>&1 || \
-  gcloud iam service-accounts create "$SA_NAME" --display-name="Aqoon UNEFD - Cloud Run"
+  { gcloud iam service-accounts create "$SA_NAME" --display-name="Aqoon UNEFD - Cloud Run"; sleep 30; }
 for role in roles/cloudsql.client roles/secretmanager.secretAccessor roles/logging.logWriter; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="$role" --condition=None >/dev/null
 done
@@ -84,10 +84,11 @@ gcloud storage buckets update "gs://$BUCKET" --cors-file="$CORS_FILE"
 rm -f "$CORS_FILE"
 
 echo "▶ Compte de service dédié à Cloud Build (déploiement Cloud Run + jobs de migration)…"
+# (pause après création : un compte de service neuf met quelques secondes à être visible par IAM)
 # Compte explicite : les projets récents n'utilisent plus <numéro>@cloudbuild.gserviceaccount.com
 BUILD_SA="aqoon-build@${PROJECT_ID}.iam.gserviceaccount.com"
 gcloud iam service-accounts describe "$BUILD_SA" >/dev/null 2>&1 || \
-  gcloud iam service-accounts create aqoon-build --display-name="Aqoon UNEFD - Cloud Build"
+  { gcloud iam service-accounts create aqoon-build --display-name="Aqoon UNEFD - Cloud Build"; sleep 30; }
 for role in roles/run.admin roles/artifactregistry.writer roles/logging.logWriter roles/storage.objectViewer; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$BUILD_SA" --role="$role" --condition=None >/dev/null
 done
