@@ -10,7 +10,8 @@ SERVICE="${SERVICE:-aqoon-unefd}"
 CLIENT_URL="${CLIENT_URL:-}"
 
 cd "$(dirname "$0")/../.."
-gcloud builds submit --project="$PROJECT_ID" --region="$REGION" \
+BUILD_SA="projects/${PROJECT_ID}/serviceAccounts/aqoon-build@${PROJECT_ID}.iam.gserviceaccount.com"
+gcloud builds submit --project="$PROJECT_ID" --region="$REGION" --service-account="$BUILD_SA" \
   --config=deploy/gcp/cloudbuild.yaml \
   --substitutions="_REGION=$REGION,_BUCKET=$BUCKET,_SA=$SA,_SERVICE=$SERVICE,_CLIENT_URL=$CLIENT_URL" .
 

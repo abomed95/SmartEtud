@@ -44,7 +44,7 @@ gcloud iam service-accounts add-iam-policy-binding "$SA" \
 
 echo "▶ Cloud SQL PostgreSQL 16 ($SQL_TIER) — peut prendre ~10 min…"
 gcloud sql instances describe "$SQL_INSTANCE" >/dev/null 2>&1 || \
-  gcloud sql instances create "$SQL_INSTANCE" --database-version=POSTGRES_16 --tier="$SQL_TIER" \
+  gcloud sql instances create "$SQL_INSTANCE" --database-version=POSTGRES_16 --edition=ENTERPRISE --tier="$SQL_TIER" \
     --region="$REGION" --storage-auto-increase --backup-start-time=02:00 \
     --enable-point-in-time-recovery --deletion-protection
 gcloud sql databases describe "$DB_NAME" --instance="$SQL_INSTANCE" >/dev/null 2>&1 || \
@@ -83,13 +83,15 @@ JSON
 gcloud storage buckets update "gs://$BUCKET" --cors-file="$CORS_FILE"
 rm -f "$CORS_FILE"
 
-echo "▶ Droits du compte Cloud Build (déploiement Cloud Run + jobs)…"
-PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
-CB_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
-for role in roles/run.admin roles/artifactregistry.writer; do
-  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$CB_SA" --role="$role" --condition=None >/dev/null
+echo "▶ Compte de service dédié à Cloud Build (déploiement Cloud Run + jobs de migration)…"
+# Compte explicite : les projets récents n'utilisent plus <numéro>@cloudbuild.gserviceaccount.com
+BUILD_SA="aqoon-build@${PROJECT_ID}.iam.gserviceaccount.com"
+gcloud iam service-accounts describe "$BUILD_SA" >/dev/null 2>&1 || \
+  gcloud iam service-accounts create aqoon-build --display-name="Aqoon UNEFD - Cloud Build"
+for role in roles/run.admin roles/artifactregistry.writer roles/logging.logWriter roles/storage.objectViewer; do
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$BUILD_SA" --role="$role" --condition=None >/dev/null
 done
-gcloud iam service-accounts add-iam-policy-binding "$SA" --member="serviceAccount:$CB_SA" --role=roles/iam.serviceAccountUser >/dev/null
+gcloud iam service-accounts add-iam-policy-binding "$SA" --member="serviceAccount:$BUILD_SA" --role=roles/iam.serviceAccountUser >/dev/null
 
 cat <<MSG
 
