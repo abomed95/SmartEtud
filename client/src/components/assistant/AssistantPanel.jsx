@@ -87,7 +87,7 @@ export default function AssistantButton() {
                 {messages.length === 0 && (
                   <div className="pt-6 text-center">
                     <p className="text-[22px] font-bold text-slate-900">Bonjour {user?.prenom || user?.nom} 👋</p>
-                    <p className="text-[14px] text-slate-500 mt-1 mb-6">Posez une question en français, somali, afar ou arabe.</p>
+                    <p className="text-[14px] text-slate-500 mt-1 mb-6">Posez votre question sur vos notes, absences, paiements ou démarches.</p>
                     <div className="space-y-2">
                       {(SUGGESTIONS[user?.role] || []).map((s) => (
                         <button key={s} onClick={() => envoyer(s)} className="w-full text-left card px-4 py-3 text-[14px] text-primary-600 hover:shadow-card-hover transition-shadow">{s}</button>

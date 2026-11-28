@@ -14,7 +14,7 @@ Plateforme de gestion universitaire pour l'UNEFD : scolarité, notes, assiduité
 | Requêtes en ligne | Étudiant → Secrétariat | Attestation d'inscription, certificat de scolarité, relevé, réclamation de note ; suivi du statut ; PDF généré automatiquement une fois validé |
 | Vidéothèque | Enseignant → Étudiant | Cours en vidéo (lien YouTube/Vimeo ou fichier sur Cloud Storage), par filière/matière, avec suivi de progression |
 | Alerte précoce | Direction, secrétariat, enseignants | Score de risque de décrochage explicable (notes 45 %, assiduité 35 %, finances 20 %), moyenne cible pour remonter à 10/20 |
-| « Demander à l'IA » | Tous | Assistant sur chaque écran, qui répond à partir des données de l'utilisateur (français, somali, afar, arabe) ; mode hors-ligne sans clé API |
+| « Demander à l'IA » | Tous | Assistant sur chaque écran, qui répond à partir des données de l'utilisateur (français, ou arabe si la question est en arabe) ; mode hors-ligne sans clé API |
 | Gestion | Direction, secrétariat | Étudiants (et leurs accès portail), enseignants, filières, matières, paiements en FDJ, appel, bulletins |
 
 Interface inspirée des Human Interface Guidelines d'Apple : typographie système, mode sombre automatique, barre d'onglets sur mobile, feuilles modales, installable sur l'écran d'accueil (PWA).
