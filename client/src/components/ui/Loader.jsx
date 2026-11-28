@@ -1,37 +1,23 @@
-import { motion } from 'framer-motion';
+import { LogoMark } from '../brand/Logo';
 
-export function Spinner({ size = 24, className = '' }) {
+/** Indicateur d'activité iOS (12 branches). */
+export function Spinner({ size = 20, className = '' }) {
   return (
-    <svg className={`animate-spin ${className}`} width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    <svg className={`animate-spin ${className}`} style={{ animationDuration: '0.9s', animationTimingFunction: 'steps(12)' }}
+      width={size} height={size} viewBox="0 0 24 24" aria-label="Chargement" role="status">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <rect key={i} x="11" y="2" width="2" height="6" rx="1" fill="currentColor"
+          opacity={0.15 + (i / 12) * 0.85} transform={`rotate(${i * 30} 12 12)`} />
+      ))}
     </svg>
   );
 }
 
 export default function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center gap-4"
-      >
-        <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-2xl">S</span>
-        </div>
-        <div className="flex gap-1.5">
-          {[0, 1, 2].map(i => (
-            <motion.div
-              key={i}
-              className="w-2 h-2 bg-primary-600 rounded-full"
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-            />
-          ))}
-        </div>
-        <p className="text-sm text-slate-500 font-medium">SmartEdu ERP</p>
-      </motion.div>
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center gap-5 bg-slate-50">
+      <LogoMark size={64} className="rounded-[22%] shadow-lg animate-fade-in" />
+      <Spinner size={22} className="text-slate-400" />
     </div>
   );
 }

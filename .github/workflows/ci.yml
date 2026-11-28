@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aqoon
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aqoon?schema=public
+      JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+      - name: Serveur — dépendances, migrations, données de test
+        working-directory: server
+        run: |
+          npm ci
+          npx prisma migrate deploy
+          node prisma/seed.js
+      - name: Serveur — tests d'intégration
+        working-directory: server
+        run: npm test
+      - name: Client — build
+        working-directory: client
+        run: |
+          npm ci
+          npm run build

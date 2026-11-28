@@ -18,7 +18,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      if (window.location.pathname !== '/login') {
+      if (!['/login', '/'].includes(window.location.pathname)) {
         window.location.href = '/login';
       }
     }
@@ -70,7 +70,8 @@ export const etudiantAPI = {
   getById: (id) => api.get(`/etudiants/${id}`),
   create: (data) => api.post('/etudiants', data),
   update: (id, data) => api.put(`/etudiants/${id}`, data),
-  remove: (id) => api.delete(`/etudiants/${id}`)
+  remove: (id) => api.delete(`/etudiants/${id}`),
+  createCompte: (id, data) => api.post(`/etudiants/${id}/compte`, data)
 };
 
 export const noteAPI = {
@@ -111,7 +112,50 @@ export const pdfAPI = {
   getBulletin: (etudiantId, params) =>
     api.get(`/pdf/bulletin/${etudiantId}`, { params, responseType: 'blob' }),
   getRecu: (paiementId) =>
-    api.get(`/pdf/recu/${paiementId}`, { responseType: 'blob' })
+    api.get(`/pdf/recu/${paiementId}`, { responseType: 'blob' }),
+  getAttestation: (etudiantId, type) =>
+    api.get(`/pdf/attestation/${etudiantId}`, { params: { type }, responseType: 'blob' })
 };
+
+export const requeteAPI = {
+  getAll: (params) => api.get('/requetes', { params }),
+  create: (data) => api.post('/requetes', data),
+  traiter: (id, data) => api.patch(`/requetes/${id}`, data)
+};
+
+export const videoAPI = {
+  getAll: (params) => api.get('/videos', { params }),
+  create: (data) => api.post('/videos', data),
+  update: (id, data) => api.put(`/videos/${id}`, data),
+  remove: (id) => api.delete(`/videos/${id}`),
+  lecture: (id) => api.get(`/videos/${id}/lecture`),
+  progression: (id, progression) => api.post(`/videos/${id}/progression`, { progression }),
+  stats: (id) => api.get(`/videos/${id}/stats`),
+  uploadUrl: (data) => api.post('/videos/upload-url', data),
+  /** Envoi d'un fichier : direct vers Cloud Storage (prod) ou via l'API (dev), avec progression. */
+  envoyerFichier: async (file, onProgress) => {
+    const cible = await api.post('/videos/upload-url', { contentType: file.type, taille: file.size });
+    if (cible.mode === 'gcs') {
+      await axios.put(cible.uploadUrl, file, {
+        headers: { 'Content-Type': file.type },
+        onUploadProgress: (e) => onProgress?.(Math.round((e.loaded / e.total) * 100))
+      });
+    } else {
+      const form = new FormData();
+      form.append('fichier', file);
+      await api.post('/videos/upload', form, {
+        params: { objectName: cible.objectName },
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 0,
+        onUploadProgress: (e) => onProgress?.(Math.round((e.loaded / e.total) * 100))
+      });
+    }
+    return cible.objectName;
+  }
+};
+
+export const portailAPI = { getDossier: () => api.get('/portail/dossier') };
+export const alerteAPI = { getAll: (params) => api.get('/alertes', { params }) };
+export const assistantAPI = { chat: (messages, page) => api.post('/assistant/chat', { messages, page }, { timeout: 90000 }) };
 
 export default api;

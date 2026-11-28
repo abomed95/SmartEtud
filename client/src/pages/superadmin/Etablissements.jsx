@@ -200,7 +200,7 @@ export default function Etablissements() {
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Mot de passe *</label>
-                <input {...register('dirPassword', { required: 'Requis', minLength: { value: 6, message: 'Min 6 caractères' } })} type="password" className="input-field" placeholder="••••••••" />
+                <input {...register('dirPassword', { required: 'Requis', minLength: { value: 8, message: 'Min 8 caractères' } })} type="password" className="input-field" placeholder="••••••••" />
                 {errors.dirPassword && <p className="text-red-500 text-xs mt-1">{errors.dirPassword.message}</p>}
               </div>
             </div>

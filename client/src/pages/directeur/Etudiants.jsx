@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, GraduationCap, Search, Filter, Trash2, Pencil, Eye, Download } from 'lucide-react';
+import { Plus, GraduationCap, Search, Trash2, Pencil, KeyRound, FileText, Copy } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { etudiantAPI, filiereAPI } from '../../services/api';
+import { etudiantAPI, filiereAPI, pdfAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { downloadBlob } from '../../utils/helpers';
 import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import EmptyState from '../../components/ui/EmptyState';
@@ -23,6 +25,11 @@ export default function Etudiants() {
   const [deleteDialog, setDeleteDialog] = useState(null);
   const [saving, setSaving] = useState(false);
   const [selectedNiveaux, setSelectedNiveaux] = useState([]);
+  const [acces, setAcces] = useState(null);       // étudiant pour lequel on crée l'accès portail
+  const [accesEmail, setAccesEmail] = useState('');
+  const [identifiants, setIdentifiants] = useState(null); // mot de passe temporaire à transmettre
+  const { user } = useAuth();
+  const isDirecteur = user?.role === 'DIRECTEUR';
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
   const watchFiliere = watch('filiereId');
@@ -82,6 +89,20 @@ export default function Etudiants() {
       setDeleteDialog(null);
       load();
     } catch { toast.error('Erreur'); }
+  };
+
+  const creerAcces = async () => {
+    try {
+      const r = await etudiantAPI.createCompte(acces.id, { email: accesEmail });
+      setIdentifiants(r);
+      setAcces(null);
+      load();
+    } catch (err) { toast.error(err.error || 'Erreur'); }
+  };
+
+  const bulletin = async (etu) => {
+    try { downloadBlob(await pdfAPI.getBulletin(etu.id), `bulletin_${etu.matricule}.pdf`); }
+    catch { toast.error('Génération impossible'); }
   };
 
   const badgeStatut = { ACTIF: 'badge-success', INACTIF: 'badge-gray', SUSPENDU: 'badge-danger' };
@@ -157,12 +178,19 @@ export default function Etudiants() {
                     </td>
                     <td className="table-cell text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openEdit(etu)} className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                        <button onClick={() => bulletin(etu)} title="Bulletin PDF" className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                          <FileText size={15} />
+                        </button>
+                        <button onClick={() => { setAcces(etu); setAccesEmail(etu.user?.email || etu.email || ''); }} title={etu.user ? 'Réinitialiser l\'accès portail' : 'Créer l\'accès portail'}
+                          className={`p-1.5 rounded-lg transition-colors hover:bg-primary-50 ${etu.user ? 'text-success' : 'text-slate-400 hover:text-primary-600'}`}>
+                          <KeyRound size={15} />
+                        </button>
+                        {isDirecteur && <button onClick={() => openEdit(etu)} className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
                           <Pencil size={15} />
-                        </button>
-                        <button onClick={() => setDeleteDialog(etu)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        </button>}
+                        {isDirecteur && <button onClick={() => setDeleteDialog(etu)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                           <Trash2 size={15} />
-                        </button>
+                        </button>}
                       </div>
                     </td>
                   </motion.tr>
@@ -236,6 +264,28 @@ export default function Etudiants() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!acces} onClose={() => setAcces(null)} title="Accès au portail étudiant" size="sm">
+        <div className="space-y-4">
+          <p className="text-[14px] text-slate-600">
+            {acces?.user ? 'Un nouveau mot de passe temporaire sera généré pour ' : 'Créez un compte pour que '}
+            <strong>{acces?.prenom} {acces?.nom}</strong>{acces?.user ? '.' : ' consulte ses notes, dépose ses requêtes et suive ses cours vidéo.'}
+          </p>
+          <input value={accesEmail} onChange={e => setAccesEmail(e.target.value)} disabled={!!acces?.user} type="email" className="input-field" placeholder="email de l'étudiant" />
+          <button onClick={creerAcces} className="btn-primary w-full min-h-[46px]"><KeyRound size={16} /> {acces?.user ? 'Réinitialiser' : 'Créer l\'accès'}</button>
+        </div>
+      </Modal>
+
+      <Modal isOpen={!!identifiants} onClose={() => setIdentifiants(null)} title="Identifiants à transmettre" size="sm">
+        <div className="space-y-3">
+          <div className="card p-4 font-mono text-[14px] space-y-1">
+            <p>{identifiants?.email}</p>
+            <p className="text-[18px] font-bold">{identifiants?.tempPassword}</p>
+          </div>
+          <button onClick={() => { navigator.clipboard?.writeText(`${identifiants.email} / ${identifiants.tempPassword}`); toast.success('Copié'); }} className="btn-secondary w-full"><Copy size={16} /> Copier</button>
+          <p className="text-[12px] text-slate-500">Ce mot de passe ne sera plus affiché. Demandez à l'étudiant de le changer dans « Réglages » dès sa première connexion.</p>
+        </div>
       </Modal>
 
       <ConfirmDialog

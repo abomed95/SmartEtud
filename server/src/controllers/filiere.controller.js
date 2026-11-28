@@ -1,95 +1,63 @@
 const prisma = require('../utils/prisma');
+const { ah, HttpError, etabIdFor, assertSameEtab } = require('../utils/scope');
 
-const getAll = async (req, res) => {
-  try {
-    const etablissementId = req.user.role === 'SUPER_ADMIN'
-      ? req.query.etablissementId
-      : req.user.etablissementId;
-
-    const where = etablissementId ? { etablissementId } : {};
-
-    const filieres = await prisma.filiere.findMany({
-      where,
-      include: {
-        _count: { select: { etudiants: true, matieres: true } },
-        niveaux: { orderBy: { ordre: 'asc' } }
-      },
-      orderBy: { nom: 'asc' }
-    });
-    res.json(filieres);
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+const loadFiliere = async (user, id, include) => {
+  const filiere = await prisma.filiere.findUnique({ where: { id }, include });
+  if (!filiere) throw new HttpError(404, 'Filière introuvable');
+  assertSameEtab(user, filiere.etablissementId);
+  return filiere;
 };
 
-const getById = async (req, res) => {
-  try {
-    const filiere = await prisma.filiere.findUnique({
-      where: { id: req.params.id },
-      include: {
-        matieres: { include: { professeurs: { include: { professeur: { include: { user: { select: { nom: true, prenom: true } } } } } } } },
-        niveaux: { orderBy: { ordre: 'asc' } },
-        _count: { select: { etudiants: true } }
-      }
-    });
-    if (!filiere) return res.status(404).json({ error: 'Filière introuvable' });
-    res.json(filiere);
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
+const getAll = ah(async (req, res) => {
+  const etablissementId = etabIdFor(req);
+  const filieres = await prisma.filiere.findMany({
+    where: etablissementId ? { etablissementId } : {},
+    include: { _count: { select: { etudiants: true, matieres: true } }, niveaux: { orderBy: { ordre: 'asc' } } },
+    orderBy: { nom: 'asc' }
+  });
+  res.json(filieres);
+});
 
-const create = async (req, res) => {
-  try {
-    const { nom, description, duree, niveaux } = req.body;
-    if (!nom) return res.status(400).json({ error: 'Nom de la filière requis' });
+const getById = ah(async (req, res) => {
+  const filiere = await loadFiliere(req.user, req.params.id, {
+    matieres: { include: { professeurs: { include: { professeur: { include: { user: { select: { nom: true, prenom: true } } } } } } } },
+    niveaux: { orderBy: { ordre: 'asc' } },
+    _count: { select: { etudiants: true } }
+  });
+  res.json(filiere);
+});
 
-    const etablissementId = req.user.role === 'SUPER_ADMIN'
-      ? req.body.etablissementId
-      : req.user.etablissementId;
-
-    const filiere = await prisma.$transaction(async (tx) => {
-      const newFiliere = await tx.filiere.create({
-        data: { nom, description, duree: duree ? parseInt(duree) : null, etablissementId }
-      });
-      if (niveaux && niveaux.length > 0) {
-        await tx.niveau.createMany({
-          data: niveaux.map((n, i) => ({ nom: n.nom || n, ordre: i + 1, filiereId: newFiliere.id }))
-        });
-      }
-      return newFiliere;
-    });
-
-    res.status(201).json({ message: 'Filière créée avec succès', filiere });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la création' });
-  }
-};
-
-const update = async (req, res) => {
-  try {
-    const { nom, description, duree, actif } = req.body;
-    const filiere = await prisma.filiere.update({
-      where: { id: req.params.id },
-      data: { nom, description, duree: duree ? parseInt(duree) : undefined, actif }
-    });
-    res.json({ message: 'Filière modifiée', filiere });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
-
-const remove = async (req, res) => {
-  try {
-    const count = await prisma.etudiant.count({ where: { filiereId: req.params.id } });
-    if (count > 0) {
-      return res.status(400).json({ error: `Impossible de supprimer: ${count} étudiant(s) dans cette filière` });
+const create = ah(async (req, res) => {
+  const { nom, description, duree, niveaux } = req.body;
+  if (!nom) throw new HttpError(400, 'Nom de la filière requis');
+  const etablissementId = etabIdFor(req);
+  if (!etablissementId) throw new HttpError(400, 'Établissement requis');
+  const filiere = await prisma.$transaction(async (tx) => {
+    const f = await tx.filiere.create({ data: { nom, description, duree: duree ? parseInt(duree, 10) : null, etablissementId } });
+    if (Array.isArray(niveaux) && niveaux.length) {
+      await tx.niveau.createMany({ data: niveaux.map((n, i) => ({ nom: n.nom || n, ordre: i + 1, filiereId: f.id })) });
     }
-    await prisma.filiere.delete({ where: { id: req.params.id } });
-    res.json({ message: 'Filière supprimée' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
+    return f;
+  });
+  res.status(201).json({ message: 'Filière créée avec succès', filiere });
+});
+
+const update = ah(async (req, res) => {
+  const existing = await loadFiliere(req.user, req.params.id);
+  const { nom, description, duree, actif } = req.body;
+  const filiere = await prisma.filiere.update({
+    where: { id: existing.id },
+    data: { nom, description, duree: duree ? parseInt(duree, 10) : undefined, actif }
+  });
+  res.json({ message: 'Filière modifiée', filiere });
+});
+
+const remove = ah(async (req, res) => {
+  const existing = await loadFiliere(req.user, req.params.id);
+  const count = await prisma.etudiant.count({ where: { filiereId: existing.id } });
+  if (count > 0) throw new HttpError(400, `Impossible de supprimer : ${count} étudiant(s) dans cette filière`);
+  await prisma.filiere.delete({ where: { id: existing.id } });
+  res.json({ message: 'Filière supprimée' });
+});
 
 module.exports = { getAll, getById, create, update, remove };

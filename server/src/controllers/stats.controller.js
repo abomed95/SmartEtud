@@ -4,7 +4,7 @@ const getSuperAdminStats = async (req, res) => {
   try {
     const [totalEtabs, totalUsers, totalEtudiants, etabsActifs, recentEtabs] = await Promise.all([
       prisma.etablissement.count(),
-      prisma.user.count({ where: { role: { not: 'SUPER_ADMIN' } } }),
+      prisma.user.count({ where: { role: { notIn: ['SUPER_ADMIN', 'ETUDIANT'] } } }),
       prisma.etudiant.count(),
       prisma.etablissement.count({ where: { statut: 'ACTIF' } }),
       prisma.etablissement.findMany({
@@ -76,7 +76,13 @@ const getDirecteurStats = async (req, res) => {
       take: 6
     });
 
+    const [requetesEnAttente, videos] = await Promise.all([
+      prisma.requete.count({ where: { etablissementId, statut: { in: ['EN_ATTENTE', 'EN_COURS'] } } }),
+      prisma.video.count({ where: { etablissementId } })
+    ]);
+
     res.json({
+      requetesEnAttente, videos,
       totalEtudiants, totalProfs, totalFilieres, etudiantsActifs,
       revenus: paiements._sum.montantPaye || 0,
       totalDu: paiements._sum.montant || 0,
@@ -105,7 +111,10 @@ const getProfesseurStats = async (req, res) => {
       prisma.absence.count({ where: { matiereId: { in: matiereIds } } })
     ]);
 
+    const videos = await prisma.video.count({ where: { auteurId: req.user.id } });
+
     res.json({
+      videos,
       matieres: prof.matieres.map(pm => pm.matiere),
       totalNotes,
       moyenneClasse: moyenneNotes._avg.valeur || 0,
@@ -141,7 +150,10 @@ const getSecretaireStats = async (req, res) => {
       prisma.etudiant.count({ where: { etablissementId, statut: 'ACTIF' } })
     ]);
 
+    const requetesEnAttente = await prisma.requete.count({ where: { etablissementId, statut: { in: ['EN_ATTENTE', 'EN_COURS'] } } });
+
     res.json({
+      requetesEnAttente,
       paiementsAujourdhui: paiementsAujourdhui._sum.montantPaye || 0,
       nbPaiementsAujourdhui: paiementsAujourdhui._count._all,
       absentsAujourdhui,

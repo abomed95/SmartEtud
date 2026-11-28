@@ -95,11 +95,11 @@ export default function Paiements() {
       <div className="grid grid-cols-2 gap-4">
         <div className="card p-4">
           <p className="text-xs text-slate-500 mb-1">Total encaissé</p>
-          <p className="text-2xl font-bold text-green-600">{totalRevenus.toLocaleString()} <span className="text-sm font-normal text-slate-400">FCFA</span></p>
+          <p className="text-2xl font-bold text-green-600">{totalRevenus.toLocaleString('fr-FR')} <span className="text-sm font-normal text-slate-400">FDJ</span></p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-slate-500 mb-1">Total impayé</p>
-          <p className="text-2xl font-bold text-red-600">{totalImpayes.toLocaleString()} <span className="text-sm font-normal text-slate-400">FCFA</span></p>
+          <p className="text-2xl font-bold text-red-600">{totalImpayes.toLocaleString('fr-FR')} <span className="text-sm font-normal text-slate-400">FDJ</span></p>
         </div>
       </div>
 
@@ -146,8 +146,8 @@ export default function Paiements() {
                     <td className="table-cell hidden md:table-cell font-mono text-xs text-slate-500">{pai.reference}</td>
                     <td className="table-cell">
                       <div>
-                        <p className="font-semibold text-sm text-slate-900">{pai.montantPaye.toLocaleString()} <span className="text-xs font-normal text-slate-400">FCFA</span></p>
-                        {pai.montant !== pai.montantPaye && <p className="text-xs text-slate-400">/ {pai.montant.toLocaleString()}</p>}
+                        <p className="font-semibold text-sm text-slate-900">{pai.montantPaye.toLocaleString('fr-FR')} <span className="text-xs font-normal text-slate-400">FDJ</span></p>
+                        {pai.montant !== pai.montantPaye && <p className="text-xs text-slate-400">/ {pai.montant.toLocaleString('fr-FR')}</p>}
                       </div>
                     </td>
                     <td className="table-cell hidden sm:table-cell text-slate-500 text-sm">{pai.mois} {pai.annee}</td>

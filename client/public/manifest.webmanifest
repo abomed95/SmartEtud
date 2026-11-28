@@ -1,0 +1,11 @@
+{
+  "name": "Aqoon UNEFD",
+  "short_name": "Aqoon",
+  "description": "Le campus connecté de Djibouti",
+  "lang": "fr",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F2F2F7",
+  "theme_color": "#0071E3",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
